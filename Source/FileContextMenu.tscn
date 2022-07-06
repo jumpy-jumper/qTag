@@ -1,0 +1,110 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Assets/default_theme.tres" type="Theme" id=1]
+[ext_resource path="res://Assets/forward-r.svg" type="Texture" id=2]
+[ext_resource path="res://Source/FileContextMenu.gd" type="Script" id=3]
+[ext_resource path="res://Assets/square.png" type="Texture" id=4]
+[ext_resource path="res://Assets/menu_font.tres" type="DynamicFont" id=6]
+
+[node name="FileContextMenu" type="PopupMenu"]
+margin_right = 192.0
+margin_bottom = 217.0
+script = ExtResource( 3 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 24.0
+margin_top = 16.0
+margin_right = -24.0
+margin_bottom = -16.0
+
+[node name="NewTag" type="Button" parent="VBoxContainer"]
+self_modulate = Color( 1, 1, 1, 0.478431 )
+margin_right = 144.0
+margin_bottom = 24.0
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 6 )
+text = "+"
+
+[node name="Separator" type="TextureRect" parent="VBoxContainer"]
+self_modulate = Color( 0.521569, 0.521569, 0.521569, 0 )
+margin_top = 59.0
+margin_right = 144.0
+margin_bottom = 61.0
+rect_min_size = Vector2( 0, 2 )
+texture = ExtResource( 4 )
+expand = true
+
+[node name="Separator2" type="TextureRect" parent="VBoxContainer"]
+self_modulate = Color( 0.329412, 0.329412, 0.329412, 1 )
+margin_top = 65.0
+margin_right = 144.0
+margin_bottom = 67.0
+rect_min_size = Vector2( 0, 2 )
+rect_pivot_offset = Vector2( 64, 1 )
+texture = ExtResource( 4 )
+expand = true
+
+[node name="Separator3" type="TextureRect" parent="VBoxContainer"]
+self_modulate = Color( 0.521569, 0.521569, 0.521569, 0 )
+margin_top = 71.0
+margin_right = 144.0
+margin_bottom = 73.0
+rect_min_size = Vector2( 0, 2 )
+texture = ExtResource( 4 )
+expand = true
+
+[node name="Open" type="Button" parent="VBoxContainer"]
+margin_top = 77.0
+margin_right = 144.0
+margin_bottom = 101.0
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 6 )
+text = "Open"
+align = 0
+
+[node name="OpenExternal" type="Button" parent="VBoxContainer/Open"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -27.0
+hint_tooltip = "Open in external application"
+theme = ExtResource( 1 )
+icon = ExtResource( 2 )
+expand_icon = true
+
+[node name="Copy" type="Button" parent="VBoxContainer"]
+margin_top = 105.0
+margin_right = 144.0
+margin_bottom = 129.0
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 6 )
+text = "Copy"
+align = 0
+
+[node name="Delete" type="Button" parent="VBoxContainer"]
+margin_top = 133.0
+margin_right = 144.0
+margin_bottom = 157.0
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 6 )
+text = "Delete"
+align = 0
+
+[node name="Properties" type="Button" parent="VBoxContainer"]
+margin_top = 161.0
+margin_right = 144.0
+margin_bottom = 185.0
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 6 )
+text = "Properties"
+align = 0
+
+[connection signal="popup_hide" from="." to="." method="_on_FileContextMenu_popup_hide"]
+[connection signal="pressed" from="VBoxContainer/NewTag" to="." method="_on_NewTag_pressed"]
+[connection signal="pressed" from="VBoxContainer/Open" to="." method="_on_Open_pressed"]
+[connection signal="pressed" from="VBoxContainer/Open/OpenExternal" to="." method="_on_OpenExternal_pressed"]
+[connection signal="pressed" from="VBoxContainer/Copy" to="." method="_on_Copy_pressed"]
+[connection signal="pressed" from="VBoxContainer/Delete" to="." method="_on_Delete_pressed"]
+[connection signal="pressed" from="VBoxContainer/Properties" to="." method="_on_Properties_pressed"]

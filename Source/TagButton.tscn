@@ -1,0 +1,44 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Assets/default_theme.tres" type="Theme" id=1]
+[ext_resource path="res://Assets/default_font.tres" type="DynamicFont" id=2]
+[ext_resource path="res://Source/SliderTag.gd" type="Script" id=3]
+[ext_resource path="res://Assets/menu_font.tres" type="DynamicFont" id=4]
+
+[node name="SliderTag" type="Button"]
+rect_min_size = Vector2( 144, 27 )
+theme = ExtResource( 1 )
+custom_fonts/font = ExtResource( 2 )
+script = ExtResource( 3 )
+
+[node name="HSlider" type="HSlider" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_pivot_offset = Vector2( 64, 13 )
+value = 50.0
+tick_count = 4
+ticks_on_borders = true
+
+[node name="Label" type="Label" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = ExtResource( 4 )
+text = "Tag1"
+align = 1
+valign = 1
+
+[node name="Delete" type="Button" parent="."]
+modulate = Color( 1, 0.494118, 0.494118, 1 )
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -8.0
+margin_top = -3.0
+margin_right = 16.0
+margin_bottom = -3.0
+rect_scale = Vector2( 0.5, 0.5 )
+text = "X"
+clip_text = true
+
+[connection signal="value_changed" from="HSlider" to="." method="_on_HSlider_value_changed"]
+[connection signal="pressed" from="Delete" to="." method="_on_Delete_pressed"]

@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://Source/NewTagMenu.gd" type="Script" id=1]
+
+[node name="NewTagMenu" type="PopupMenu"]
+size_flags_horizontal = 0
+size_flags_vertical = 0
+script = ExtResource( 1 )
+
+[connection signal="id_pressed" from="." to="." method="_on_NewTagMenu_id_pressed"]
+[connection signal="popup_hide" from="." to="." method="_on_NewTagMenu_popup_hide"]

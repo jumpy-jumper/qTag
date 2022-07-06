@@ -1,0 +1,42 @@
+[gd_resource type="Theme" load_steps=11 format=2]
+
+[ext_resource path="res://Assets/default_font.tres" type="DynamicFont" id=1]
+[ext_resource path="res://Assets/menu_font.tres" type="DynamicFont" id=2]
+
+[sub_resource type="StyleBoxEmpty" id=1]
+
+[sub_resource type="StyleBoxEmpty" id=5]
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.6, 0.6, 0.6, 0.196078 )
+
+[sub_resource type="StyleBoxEmpty" id=3]
+
+[sub_resource type="StyleBoxFlat" id=4]
+bg_color = Color( 0.6, 0.6, 0.6, 0.4 )
+
+[sub_resource type="StyleBoxFlat" id=8]
+bg_color = Color( 0.160784, 0.160784, 0.160784, 0 )
+
+[sub_resource type="StyleBoxFlat" id=6]
+bg_color = Color( 0.109804, 0.109804, 0.109804, 1 )
+
+[sub_resource type="StyleBoxFlat" id=7]
+bg_color = Color( 0.24, 0.24, 0.24, 0.2 )
+
+[resource]
+default_font = ExtResource( 1 )
+Button/styles/disabled = SubResource( 1 )
+Button/styles/focus = SubResource( 5 )
+Button/styles/hover = SubResource( 2 )
+Button/styles/normal = SubResource( 3 )
+Button/styles/pressed = SubResource( 4 )
+GridContainer/constants/hseparation = 8
+GridContainer/constants/vseparation = 8
+LineEdit/colors/font_color = Color( 0.654902, 0.854902, 1, 1 )
+LineEdit/styles/normal = SubResource( 8 )
+Panel/styles/panel = SubResource( 6 )
+PopupMenu/fonts/font = ExtResource( 2 )
+TabContainer/constants/hseparation = 0
+TabContainer/constants/side_margin = 0
+TabContainer/styles/panel = SubResource( 7 )
