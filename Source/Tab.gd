@@ -4,7 +4,7 @@ var thread : Thread
 var stop_thread = false
 
 func _ready():
-	$LineEditPanel/LineEdit.text = expression
+	$Body/LineEdit.text = expression
 	thread = Thread.new()
 	thread.start(self, "window_update_proc")
 
@@ -14,7 +14,7 @@ func _exit_tree():
 
 var window = []
 
-onready var container : VBoxContainer = $Body/ScrollContainer/Containers
+onready var container = $Body/ScrollContainer/Containers
 onready var block_template = $Body/ScrollContainer/Containers/Buttons.duplicate()
 onready var button_template := $Body/ScrollContainer/Containers/Buttons.get_child(0).duplicate()
 onready var buttons = $Body/ScrollContainer/Containers/Buttons.get_children()
@@ -28,6 +28,7 @@ enum ViewStyle {LIST=0,GRID=1,MEDIA=2}
 export(ViewStyle) var view_style = ViewStyle.LIST
 
 func _process(delta):
+	$Body/ScrollContainer.scroll_vertical_enabled = not Input.is_action_pressed("zoom_modifier")
 	if not visible:
 		return
 
@@ -56,13 +57,11 @@ func window_update_proc():
 					cont = container.get_child(i/BLOCK_SIZE)
 				var c = buttons[i]
 				cont.visible = true
-				c.path = ""
 				c.view_style = view_style
 				if i < len(window):
-					c.visible = true
 					c.set_path(window[i])
 				else:
-					c.visible = false
+					c.set_path("")
 			#print("Window Size: ", len(window), " | Window Retrieval Time: ", OS.get_ticks_msec(), "ms")
 			#print("t: ", OS.get_ticks_msec()-s, "ms")
 			yield(get_tree(), "idle_frame")

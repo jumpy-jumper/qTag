@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using System.IO;
 
 public class TagDB : Godot.Node
 {
@@ -16,6 +17,7 @@ public class TagDB : Godot.Node
     public override void _Ready()
     {
         Instance = this;
+        tagdb_path = Godot.ProjectSettings.GlobalizePath("user://") + "custom_tags.qtdb";
         BuildDefaultTags();
     }
 
@@ -77,6 +79,9 @@ public class TagDB : Godot.Node
     // Default Tags
 
     public ConcurrentDictionary<string, Tag> Tags = new ConcurrentDictionary<string, Tag>();
+    public ConcurrentDictionary<string, Tag> TagsByName = new ConcurrentDictionary<string, Tag>();
+
+    string tagdb_path;
 
     public void BuildDefaultTags()
     {
@@ -91,25 +96,39 @@ public class TagDB : Godot.Node
         Tags.TryAdd("format", new Tag("Format", false, "Image", "Audio", "Video"));
         Tags.TryAdd("duration", new Tag("Duration", Tag.ValueType.Number));
 
-        Tags.TryAdd("NSFW", new Tag("NSFW", true, "Suggestive", "Explicit"));
-        Tags.TryAdd("Character/Clothing/Amount", new Tag("Nude", true, "Full Clothing", "Light Clothing", "Swimsuit", "Underwear", "Lingerie", "Nude"));
-        Tags.TryAdd("Character/GenderIdentity", new Tag("Gender Identity", true, "Female", "NB", "Male"));
-        Tags.TryAdd("Character/GenderPresentaton", new Tag("Gender Presentation", true, "Feminine", "Androgynous", "Masculine"));
-        Tags.TryAdd("Character/Body/Breasts/Size", new Tag("Breast Size", true, "Small Breasts", "Average Breasts", "Big Breasts", "Huge Breasts", "Massive Breasts", "Monster Breasts"));
-        Tags.TryAdd("Character/Body/Waist/Size", new Tag("Waist Size", true, "Tiny Waist", "Skinny Waist", "Average Waist", "Chubby Waist", "Fat Waist", "Obese Waist"));
-        Tags.TryAdd("Character/Body/Arm/Size", new Tag("Arm Size", true, "Tiny Arms", "Skinny Arms",  "Average Arms", "Chubby Arms", "Massive Arms", "Obese Arms"));
-        Tags.TryAdd("Character/Body/Ass/Size", new Tag("Ass Size", true, "Tiny Ass", "Fat Ass", "Huge Ass", "Massive Ass", "Ridiculous Ass"));
-        Tags.TryAdd("Character/Body/Thigh/Size", new Tag("Thigh Size", true, "Skinny Thighs", "Average Thighs", "Fat Thighs", "Huge Thighs", "Obese Thighs", "Monster Thighs"));
-        Tags.TryAdd("Character/Body/Cock/Size", new Tag("Cock Size", true, "Tiny Dick", "Average Dick", "Big Cock", "Huge Cock", "Massive Cock", "Ridiculous Cock"));
-        Tags.TryAdd("Character/Body/Cock/Erect", new Tag("Erect", true, "Flaccid", "Semi-Hard", "Erect"));
-        Tags.TryAdd("Character/Body/Muscle", new Tag("Muscle", true, "Light Muscle", "Defined Muscles", "Ridiculous Muscles"));
-        Tags.TryAdd("Character/Body/Hair/Length", new Tag("Hair Length", true, "Bald", "Very Short Hair", "Short Hair", "Medium Hair", "Long Hair", "Very Long Hair"));
-        Tags.TryAdd("Character/Age", new Tag("Age", true, "Child", "Teen", "Young", "Middle Aged", "Old"));
+        
+        try{
+            var ExposedTags = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(File.ReadAllText(tagdb_path));
+            foreach(var tag in ExposedTags)
+            {
+                var v = (Dictionary<string, object>)tag.Value;
+                var t = new Tag((string)v["name"], Tag.ValueType.Number, true);
+                foreach (string q in (Newtonsoft.Json.Linq.JArray)v["quantities"])
+                {
+                    t.Quantities.Add((string)q);
+                }
+                Tags.TryAdd(tag.Key, t);
+                TagsByName.TryAdd((string)v["name"], t);
+            }
+        } catch(Exception e){Console.WriteLine(e);};
 
         foreach(var t in Tags)
         {
             t.Value.ID = t.Key;
         }
+    }
+
+    public Tag GetTag(string id_or_name)
+    {
+        if (Tags.ContainsKey(id_or_name))
+        {
+            return Tags[id_or_name];
+        }
+        else if (TagsByName.ContainsKey(id_or_name))
+        {
+            return TagsByName[id_or_name];
+        }
+        return null;
     }
 
     public object GetTagValue(string file_path, string tag)
@@ -172,43 +191,49 @@ public class TagDB : Godot.Node
     {
 
         try {
-        var tag = new Tag("foo", Tag.ValueType.None);
         var negative = false;
         if(expr.Length > 0 && expr[0] == '-')
         {
             expr = expr.Remove(0,1);
             negative = true;
         }
-        if (Tags.ContainsKey(expr))
+        var tag = GetTag(expr);
+        if (tag != null)
         {
             // Trivial case - the expression exactly matches a tag
-            tag = Tags[expr];
             var value = (IComparable)tag.Evaluate(file, valuation);
             if (value is bool)
             {
                 return (bool)value ^ negative;
             }
-            else if (!(value is string))
+            else if (value != null && (value is long))
             {
-                return (long)value * (negative ? -1 : 1);
+                return (long)((long)(value) * (negative ? -1 : 1));
             }
-            return (IComparable)tag.Evaluate(file, valuation);
+            else if (value != null && (value is int))
+            {
+                return (int)((int)(value) * (negative ? -1 : 1));
+            }
+            return value;
+        }
+        else
+        {
+            tag = new Tag("foo", Tag.ValueType.None);
         }
 
         Match m = regex_rx.Match(expr);
         while (m.Success)
         {
-            Tag this_tag;
-            if (!Tags.ContainsKey(m.Groups[2].Value))
+            Tag this_tag = GetTag(m.Groups[2].Value);
+            if (this_tag == null)
             {
                 Console.WriteLine("Tag " + m.Groups[2].Value + " not found.");
                 m = m.NextMatch();
                 continue;
             }
-            this_tag = Tags[m.Groups[2].Value];
             Regex value_rx = new Regex(m.Groups[4].Value, m.Groups[3].Value == ":" ? RegexOptions.IgnoreCase : RegexOptions.None);
             var matches = value_rx.IsMatch((string)this_tag.Evaluate(file, Tag.Valuation.String));
-            expr.Replace(m.Groups[1].Value, matches ? "(1)" : "(0)");
+            expr = expr.Replace(m.Groups[1].Value, matches ? "(1)" : "(0)");
 
             m = m.NextMatch();
         }
@@ -228,11 +253,11 @@ public class TagDB : Godot.Node
             expr.Replace("(1)||(1)", "(1)");
             if (old == expr)
             {
-                return false;
+                return (false ^ negative);
             }
             Console.WriteLine(expr);
         }
 
-        return expr == "(1)";} catch (Exception e) {Console.WriteLine("Error analyzing file " + file + " expr " + expr + "\n\n" + e + "\n"); return null;}
+        return expr == "(1)" ^ negative;} catch (Exception e) {Console.WriteLine("Error analyzing file " + file + " expr " + expr + "\n\n" + e + "\n"); return null;}
     }
 }

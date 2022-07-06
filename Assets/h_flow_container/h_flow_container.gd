@@ -76,12 +76,12 @@ func _calculate_layout(apply: bool) -> float:
 		if child_position.x + child_min_size.x > container_width:
 			# Stretch to width
 			var remainder = container_width - child_position.x
-			if container_width - remainder > 0:
-				var d = container_width / (container_width - remainder)
-				row_height *= d
-				for c in cur_row:
-					c.rect_size *= d
-					c.rect_position.x *= d
+			#if container_width - remainder > 0:
+			#	var d = container_width / (container_width - remainder)
+			#	row_height *= d
+			#	for c in cur_row:
+			#		c.rect_size *= d
+			#		c.rect_position.x *= d
 			# Go to the next row.
 			child_position = Vector2(0, child_position.y + row_height + vertical_margin)
 			row_height = 0

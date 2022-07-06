@@ -4,14 +4,16 @@ var path = ""
 var path_dirty = false
 
 func set_path(value):
-	path = value
+	if value != path:
+		path = value
 
-export var height = 256
-export var view_style = 0
+var height = 256
+var view_style = 0
 
 var texture = null
 
 func _process(delta):
+	visible = path != ""
 	if not is_on_screen():
 		return
 	update_button()
@@ -39,6 +41,7 @@ func update_button():
 			rect_min_size = Vector2(height, height)
 		2:
 			rect_min_size = Vector2((($Image.texture.get_size().x/$Image.texture.get_size().y) if $Image.texture else 1)*height, height)
+	rect_min_size *= Global.settings["zoom_modifier"]
 		#if texture:
 		#	rect_min_size = Vector2(texture.get_size().x/texture.get_size().y*height, height)
 	if (path != ""):
@@ -50,9 +53,8 @@ func update_button():
 	$Label.margin_top = 8 if view_style != 0 else 0
 	$Label.valign = VALIGN_CENTER
 
-onready var visibility_notifier := $VisibilityNotifier2D
 func is_on_screen():
-	return rect_global_position.y >= -200 and rect_global_position.y <= OS.window_size.y +200
+	return is_visible_in_tree() and rect_global_position.y >= -200 and rect_global_position.y <= OS.window_size.y +200
 
 func _on_FileButton_pressed():
 	if Input.is_action_just_released("context_menu"):

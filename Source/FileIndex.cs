@@ -211,6 +211,7 @@ public class FileIndex : Godot.Node
                         break;
                     case Directive.Sort:
                         SortRules.Add(directive_args);
+                        Filters.Add(directive_args.Replace("-", ""));
                         break;
                 }
             }

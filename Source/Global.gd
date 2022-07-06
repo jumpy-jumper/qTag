@@ -13,7 +13,7 @@ func _ready():
 var last_size = Vector2.ZERO
 var last_pos = Vector2.ZERO
 
-func _process(delta):
+func _input(event):
 	if Input.is_action_just_pressed("fullscreen"):
 		if OS.window_borderless:
 			OS.window_borderless = false
@@ -27,11 +27,17 @@ func _process(delta):
 			OS.center_window()
 	if Input.is_action_just_pressed("restart"):
 		get_tree().reload_current_scene()
+	if Input.is_action_pressed("zoom_modifier"):
+		if event.is_action_pressed("scroll_up"):
+			set_setting("zoom_modifier", settings["zoom_modifier"]*1.05)
+		if event.is_action_pressed("scroll_down"):
+			set_setting("zoom_modifier", settings["zoom_modifier"]/1.05)
 
 # SETTINGS
 
 var settings := {
 	"double_click" : 0.5,
+	"zoom_modifier" : 1,
 }
 
 func set_setting(setting, value):
