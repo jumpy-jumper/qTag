@@ -38,6 +38,13 @@ func _input(event):
 var settings := {
 	"double_click" : 0.5,
 	"zoom_modifier" : 1,
+	"tabs" : [
+		{"name":"Default", "expr":""},
+		{"name":"Images", "expr":"#view:media format:0 #sort:-created"},
+		{"name":"Videos", "expr":"#view:media format:2 #sort:-created"},
+		{"name":"Music", "expr":"#view:list extension:mp3"},
+	],
+	"last_tab" : 0,
 }
 
 func set_setting(setting, value):
@@ -45,6 +52,7 @@ func set_setting(setting, value):
 	save_to_disk()
 
 func load_from_disk():
+	return
 	var file := File.new()
 	file.open("user://settings.ini", File.READ)
 	var dict = str2var(file.get_as_text())

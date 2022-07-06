@@ -161,6 +161,8 @@ public class TagDB : Godot.Node
                 FileIndex.Instance.ExposedTags[file_path][Tags[tag].ID] = Tags[tag].Evaluate(file_path);
                 FileIndex.Instance.SaveToDisk();
             }
+
+            FileIndex.Instance.UpdateFile(file_path);
         }
 
         return Tags[tag];
@@ -182,6 +184,8 @@ public class TagDB : Godot.Node
                 }
                 FileIndex.Instance.SaveToDisk();
             }
+
+            FileIndex.Instance.UpdateFile(file_path);
         }
     }
 

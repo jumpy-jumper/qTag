@@ -17,15 +17,14 @@ script = ExtResource( 4 )
 self_modulate = Color( 1, 1, 1, 0.67451 )
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_right = 17.0
 rect_scale = Vector2( 0.99916, 1 )
 
 [node name="TopPanel" type="Panel" parent="."]
-self_modulate = Color( 0, 0.396078, 0.207843, 0.584314 )
+self_modulate = Color( 0, 0.72549, 0.352941, 0.588235 )
 anchor_right = 1.0
-margin_top = -6.0
+margin_top = -2.0
 margin_right = 1616.0
-margin_bottom = 34.0
+margin_bottom = 38.0
 
 [node name="TopLine" type="Panel" parent="."]
 visible = false
@@ -35,30 +34,16 @@ margin_top = 70.0
 margin_bottom = 72.0
 
 [node name="TabContainer" type="TabContainer" parent="."]
+modulate = Color( 0.454902, 1, 0.615686, 1 )
 anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = -2.0
+margin_bottom = 37.0
 theme = ExtResource( 6 )
 tab_align = 0
 drag_to_rearrange_enabled = true
 
-[node name="Visual" parent="TabContainer" instance=ExtResource( 1 )]
-margin_top = 37.0
-content = NodePath("../../Content")
-expression = "#sort:-created"
-view_style = 2
-
-[node name="FFXIV" parent="TabContainer" instance=ExtResource( 1 )]
-visible = false
-margin_top = 37.0
-content = NodePath("../../Content")
-expression = "#sort:-created duration"
-view_style = 2
-
-[node name="+" type="Control" parent="TabContainer"]
-visible = false
-margin_right = 40.0
-margin_bottom = 40.0
+[node name="Tab" parent="." instance=ExtResource( 1 )]
+margin_top = 40.0
+theme = ExtResource( 6 )
 
 [node name="Content" type="Control" parent="."]
 visible = false
@@ -81,5 +66,7 @@ expand = true
 stretch_mode = 6
 script = ExtResource( 5 )
 
+[connection signal="gui_input" from="TabContainer" to="." method="_on_TabContainer_gui_input"]
+[connection signal="tab_changed" from="TabContainer" to="." method="_on_TabContainer_tab_changed"]
 [connection signal="gui_input" from="Content" to="." method="_on_Content_gui_input"]
 [connection signal="gui_input" from="Content/TextureRect" to="Content/TextureRect" method="_on_TextureRect_gui_input"]

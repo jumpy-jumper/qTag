@@ -39,25 +39,46 @@ public class FileIndex : Godot.Node
         StartStreaming();
     }
 
-    public Godot.Collections.Array get_window(string id, string expr) 
+    public bool has_window(string expr)
     {
-        Window window;
-        if (windows.ContainsKey(id))
+        if (windows.ContainsKey(expr))
         {
-            if (windows[id].Expr == expr)
-            {
-                window = windows[id];
-                window.dirty = false;
-                return new Godot.Collections.Array(
-                    window.GetWindow());
-            }
-            windows[id].Dispose();
+            return true;
         }
-        window = new Window(Files, expr);
-        windows[id] = window;
-        window.Start();
-        return new Godot.Collections.Array(
-            window.GetWindow());
+        else
+        {
+            foreach (KeyValuePair<string, FileWindow> window in windows)
+            {
+                if (window.Value.SatisfiesExpression(expr))
+                {
+                    windows[expr] = window.Value;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public List<string> get_window(string expr) 
+    {
+        if (windows.ContainsKey(expr))
+        {
+            windows[expr].dirty = false;
+        }
+        else
+        {
+            foreach (KeyValuePair<string, FileWindow> window in windows)
+            {
+                if (window.Value.SatisfiesExpression(expr))
+                {
+                    windows[expr] = window.Value;
+                    return windows[expr].ToList();
+                }
+            }
+            windows[expr] = new FileWindow(expr);
+            windows[expr].AddFiles(Files.Keys);
+        }
+        return windows[expr].ToList();
     }
 
     public bool is_window_dirty(string id) 
@@ -70,7 +91,7 @@ public class FileIndex : Godot.Node
         return Files.ContainsKey(path);
     }
 
-    public void request_thumbnail(string path)
+    public void request_thumbnail(string path, bool urgent)
     {
         if (!requestedThumbnailsHash.ContainsKey(path))
         {
@@ -116,7 +137,6 @@ public class FileIndex : Godot.Node
             Content[path] = imgtex;
         }
         return (Godot.Texture)Content[path];
-        return null;
     }
 
     public void execute(string path)
@@ -138,7 +158,7 @@ public class FileIndex : Godot.Node
         try {b = Files.TryRemove(path, out v);} catch {} 
         if (b)
         {
-            foreach (Window window in windows.Values)
+            foreach (FileWindow window in windows.Values)
             {
                 lock (this)
                 {
@@ -147,191 +167,7 @@ public class FileIndex : Godot.Node
             }
         }
     }
-
-    /*
-        FILE WINDOW
-
-        A portion of the file index that meets 
-        some filters and is ordered by some sort rules.
-
-        WINDOW EXPRESSION
-        
-        An interface for checking a file's
-        filter pass and weight based on a string expression.
-
-        An expression a list of tokens separated by spaces, which contain subtokens separated by colon. The tokens specify filtering rules unless the first subtoken specifies a sort rule.
-    */
-
-    ConcurrentDictionary<string, Window> windows = new ConcurrentDictionary<string, Window>();
-
-    class Window : IDisposable
-    {
-        readonly string UNMATCHABLE_REGEX = "a^";
-
-        public string Expr = "";
-        ConcurrentDictionary<string, HashSet<Tag>> Files;
-        List<string> Filters = new List<string>();
-        List<string> SortRules = new List<string>();
-        public bool dirty = false;
-
-        public enum Directive { Filter=0, Sort=1 }
-
-        Regex directive_rx = new Regex("#(.+):(.+)", 
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        public Window(ConcurrentDictionary<string, HashSet<Tag>> files, string expr)
-        {
-            Files = files;
-            Expr = expr;
-            string[] tokens = expr.Split(' ');
-            
-            foreach (string token in tokens)
-            {
-                Directive directive = Directive.Filter;
-                Match m = directive_rx.Match(token);
-                string directive_args = token;
-                if (m.Success)
-                {
-                    switch(m.Groups[1].Value.ToLower())
-                    {
-                        case "s":
-                        case "sort":
-                            directive = Directive.Sort;
-                            break;
-                    }
-                    directive_args = m.Groups[2].Value;
-                }
-                if(directive_args=="")
-                {
-                    continue;
-                }
-                switch(directive)
-                {
-                    case Directive.Filter:
-                        Filters.Add(directive_args);
-                        break;
-                    case Directive.Sort:
-                        SortRules.Add(directive_args);
-                        Filters.Add(directive_args.Replace("-", ""));
-                        break;
-                }
-            }
-
-            window = new SortedSet<string>(new WindowComparer(Files, SortRules));
-
-            Console.WriteLine("[Filters] " + string.Join("|", Filters));
-            Console.WriteLine("[Sorts] " + string.Join("|", SortRules));
-            Console.WriteLine();
-        }
-
-        bool AcceptsFile(string path)
-        {
-            foreach (string filter in Filters)
-            {
-                if (!(bool)TagDB.Instance.EvaluateExpr(path, filter, Tag.Valuation.Boolean))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public void Start()
-        {
-            ct = tokenSource.Token;
-            task = Task.Run(() => {WindowProc();}, tokenSource.Token);
-        }
-
-        public void Dispose()
-        {
-            tokenSource.Cancel();
-        }
-
-        void WindowProc()
-        {
-            while (true)
-            {
-                bool flag = true;
-                foreach (var item in Files)
-                {
-                    if (!window_hashed.Contains(item.Key) && AcceptsFile(item.Key))
-                    {
-                        lock(this)
-                        {
-                            window.Add(item.Key);
-                            dirty = true;
-                            flag = false;
-                        }
-                    }
-                    window_hashed.Add(item.Key);
-                    if (ct.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                }
-                if (ct.IsCancellationRequested)
-                {
-                    break;
-                }
-                if (flag)
-                {
-                    //break;
-                }
-            }
-        }
-        Task task;
-        CancellationTokenSource tokenSource = new CancellationTokenSource();
-        CancellationToken ct;
-        public SortedSet<string> window;
-        HashSet<string> window_hashed = new HashSet<string>();
-
-        class WindowComparer : IComparer<string>
-        {
-            ConcurrentDictionary<string, HashSet<Tag>> Files;
-            List<string> SortRules;
-
-            public WindowComparer(ConcurrentDictionary<string, HashSet<Tag>> files, List<string> sortRules)
-            {
-                Files = files;
-                SortRules = sortRules;
-            }
-            public int Compare(string x, string y)
-            {
-                var ret = 0;
-                foreach(var SortRule in SortRules)
-                {
-                    if (x.Equals(y) || !Files.ContainsKey(x) || !Files.ContainsKey(y))
-                    {
-                        return 0;
-                    }
-                    IComparable xe = (IComparable)TagDB.Instance.EvaluateExpr(x, SortRule);
-                    IComparable ye = TagDB.Instance.EvaluateExpr(y, SortRule);
-                    if (ye == null)
-                    {
-                        return -1;
-                    }
-                    else if (xe == null)
-                    {
-                        return 1;
-                    }
-                    ret = xe.CompareTo(ye);
-                    if (ret != 0)
-                    {
-                        return ret;
-                    }
-                }
-                return 1;
-            }
-        }
-
-        public List<string> GetWindow()
-        {
-            lock (this)
-            {
-                return window.ToList();
-            }
-        }
-    }
-
+    
     /*
         FILE INDEXING
 
@@ -340,11 +176,15 @@ public class FileIndex : Godot.Node
         as well as re-indexing after application launch.
     */
 
+    ConcurrentDictionary<string, FileWindow> windows = new ConcurrentDictionary<string, FileWindow>();
+
     void StartIndexing()
     {
         LoadFromDisk();
         Task.Run(delegate() {IndexDirectory("C:\\Sync");});
         Task.Run(delegate() {IndexDirectory("E:\\Music");});
+        Task.Run(delegate() {IndexDirectory("E:\\Manga");});
+        Task.Run(delegate() {IndexDirectory("E:\\Doujinshi");});
         Task.Run(delegate() {IndexDirectory("C:\\Users\\jcsar\\Videos\\SSD Captures");});
     }
 
@@ -411,12 +251,25 @@ public class FileIndex : Godot.Node
             }
         }
         Files[path] = data;
+        foreach (FileWindow window in windows.Values)
+        {
+            Task.Run(()=>{window.AddFile(path);});
+        }
+    }
+
+    public void UpdateFile(string path)
+    {
+        foreach (FileWindow window in windows.Values)
+        {
+            window.UpdateFile(path);
+        }
     }
 
     /*
         CONTENT STREAMING
     */
     ConcurrentQueue<string> requestedThumbnails = new ConcurrentQueue<string>();
+    ConcurrentQueue<string> requestedThumbnailsLowPrio = new ConcurrentQueue<string>();
     ConcurrentDictionary<string, bool> requestedThumbnailsHash = new ConcurrentDictionary<string, bool>();
     ConcurrentDictionary<string, Godot.Texture> Thumbnails = new 
     ConcurrentDictionary<string, Godot.Texture>();
@@ -436,7 +289,7 @@ public class FileIndex : Godot.Node
         while (true)
         {
             string path;
-            if (requestedThumbnails.TryDequeue(out path))
+            if (requestedThumbnails.TryDequeue(out path) || requestedThumbnailsLowPrio.TryDequeue(out path))
             {
                 if (Thumbnails.ContainsKey(path))
                 {
@@ -445,6 +298,7 @@ public class FileIndex : Godot.Node
                 MagickImage img;
                 Godot.ImageTexture imgtex = null;
                 try {
+                    var s = new MagickReadSettings();
                     img = new MagickImage(path);
                 } catch (Exception e) {
                     img = null;

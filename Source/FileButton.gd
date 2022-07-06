@@ -31,16 +31,23 @@ func update_button():
 		get_node("Time/Label").text = str(floor(d/60)).pad_zeros(2) \
 			+ ":" + str(floor(fmod(d, 60))).pad_zeros(2)
 	path_dirty = true
-	FileIndex.request_thumbnail(path)
+	if view_style > 0:
+		FileIndex.request_thumbnail(path, true)
 	hint_tooltip = path
 #	c.get_node("Time").visible = false
 	match(view_style):
 		0:
 			rect_min_size = Vector2(get_parent().rect_size.x, get_node("Label").rect_min_size.y)
+			$Label.autowrap = false
+			$Label.clip_text = true
 		1:
 			rect_min_size = Vector2(height, height)
+			$Label.autowrap = true
+			$Label.clip_text = false
 		2:
 			rect_min_size = Vector2((($Image.texture.get_size().x/$Image.texture.get_size().y) if $Image.texture else 1)*height, height)
+			$Label.autowrap = true
+			$Label.clip_text = false
 	rect_min_size *= Global.settings["zoom_modifier"]
 		#if texture:
 		#	rect_min_size = Vector2(texture.get_size().x/texture.get_size().y*height, height)
@@ -54,7 +61,7 @@ func update_button():
 	$Label.valign = VALIGN_CENTER
 
 func is_on_screen():
-	return is_visible_in_tree() and rect_global_position.y >= -200 and rect_global_position.y <= OS.window_size.y +200
+	return is_visible_in_tree() and rect_global_position.y >= -2000 and rect_global_position.y <= OS.window_size.y +2000
 
 func _on_FileButton_pressed():
 	if Input.is_action_just_released("context_menu"):
